@@ -65,19 +65,29 @@ jobs:
       - name: Build with Maven
         run: mvn clean package
 
+      - name: Download JRE for Windows
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.8%2B7/OpenJDK17U-jre_x64_windows_hotspot_17.0.8_7.zip" -OutFile "openjdk.zip"
+          Expand-Archive -Path "openjdk.zip" -DestinationPath "jre-windows"
+          # Найдем правильный путь к JRE
+          Get-ChildItem "jre-windows" -Recurse -Directory | Where-Object { $_.Name -eq "jre-17" } | ForEach-Object { Move-Item $_.FullName "jre-windows/jre" }
+
       - name: Create Windows package
         run: |
           jpackage `
             --name MyApp `
-            --input target/ `
+            --input target\ `
             --main-jar test_program-app-1.0-SNAPSHOT.jar `
             --type app-image `
-            --dest packages/ `
-            --vendor "Your Name" `
-            --app-version 1.0
+            --dest packages\ `
+            --vendor "Danil" `
+            --app-version 1.0 `
+            --runtime-image jre-windows/jre `
+            --win-console `
+            --verbose
 
       - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: myapp-windows-appimage
+          name: myapp-windows
           path: packages/
